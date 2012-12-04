@@ -22,7 +22,7 @@ def select_compute_down_host():
         compute_down_list = list(set(compute_down_list))
     return compute_down_list
 
-def select_compute_down_host_instances(host='172.16.0.10', user='nova', passwd='nova', db='nova'):
+def select_compute_down_host_instances(host='172.16.0.21', user='nova', passwd='nova', db='nova'):
     #连接数据库
     connection_mysql = MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)#, charset='utf8')
     cursor = connection_mysql.cursor()
@@ -137,7 +137,6 @@ def select_compute_down_host_instances(host='172.16.0.10', user='nova', passwd='
                     cursor.execute(sql_select_instance_floating_address)
                     floating_address = cursor.fetchall()
                 if floating_address == ():
-                    #floating_address == ''
                     os.system("echo '"+str(instances_name)+" "+str(j)+" "+str(instances_id[i][0])+"' >> /root/instance_info_list.txt")
                     print 'Add '+str(instances_name)+' in /root/instance_info_list.txt'
                     #在db中更新需要恢复的vm所在的新计算节点
@@ -146,7 +145,6 @@ def select_compute_down_host_instances(host='172.16.0.10', user='nova', passwd='
                     cursor.fetchall()
                     print 'Update db '+str(instances_name)+' in '+str(j)+''
                 else:
-                    #if len(floating_address) == 1:
                     floating_address = floating_address[0][0]
                     os.system("echo '"+str(instances_name)+" "+str(j)+" "+str(instances_id[i][0])+" "+str(floating_address)+"' >> /root/instance_info_list.txt")
                     print 'Add '+str(instances_name)+' in /root/instance_info_list.txt'
@@ -156,19 +154,21 @@ def select_compute_down_host_instances(host='172.16.0.10', user='nova', passwd='
                     sql_update_floating_host = 'update floating_ips set host=\''+str(j)+'\' where address=\''+str(floating_address)+'\' ;'
                     cursor.execute(sql_update_floating_host)
                     cursor.fetchall()
-                    #else:
-                    #    os.system("echo '"+str(instances_name)+" "+str(j)+" "+str(instances_id[i][0])+"' >> /root/instance_info_list.txt")
-                    #    print 'Add '+str(instances_name)+' in /root/instance_info_list.txt'
-                    #    #在db中更新需要恢复的vm所在的新计算节点
-                    #    #sql_update_instance_host = 'update instances set host=\''+str(j)+'\' where id=\''+str(instances_id_id[i][0])+'\';'
-                    #    #cursor.execute(sql_update_instance_host)
-                    #    #cursor.fetchall()
 
                 for i in select_compute_down_host():
-                    sql_delete_compute_host = 'delete from services where host=\''+str(i)+'\';'
-                    cursor.execute(sql_delete_compute_host)
+                    sql_select_services_host = 'select id from services where host=\''+str(i)+'\' and services.binary=\'nova-compute\';'
+                    cursor.execute(sql_select_services_host)
+                    id = cursor.fetchall()
+                    if id == ():
+                        pass
+                    else:
+                        sql_delete_compute_host = 'delete from compute_nodes where service_id='+str(id[0][0])+';'
+                        cursor.execute(sql_delete_compute_host)
+                        cursor.fetchall()
+                    sql_delete_service_host = 'delete from services where host=\''+str(i)+'\';'
+                    cursor.execute(sql_delete_service_host)
                     cursor.fetchall()
-                print '###已删除宕机的计算节点###'
+            	print '###已删除宕机的计算节点###'
                 break
             else:
                 print 'Big',i > j
@@ -176,6 +176,5 @@ def select_compute_down_host_instances(host='172.16.0.10', user='nova', passwd='
     cursor.close()
     connection_mysql.commit()
     connection_mysql.close()
-    #返回宕机上的实例和没有宕机的计算节点DB中的id号
-    #return instances_dict, not_down_host_id
-select_compute_down_host_instances()
+if __name__ == "__main__":
+    select_compute_down_host_instances()
