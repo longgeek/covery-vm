@@ -21,7 +21,7 @@ do
         network=`echo $fixed_ip | cut -d. -f1-2`.0.0
     elif [ "$instances_netmask" = "255.0.0.0" ]; then
         network_bits='8'
-        network=\`echo $fixed_ip | cut -d. -f1-1\`.0.0.0
+        network=`echo $fixed_ip | cut -d. -f1-1`.0.0.0
     fi
 	iptables -t filter -N nova-compute-inst-$ten_adecimal
 	iptables -t filter -A nova-compute-inst-$ten_adecimal -m state --state INVALID -j DROP
@@ -40,7 +40,7 @@ do
 </filter>
 _Longgeek_
     sed -i 's/"DHCPSERVER" value=.*$/"DHCPSERVER" value="'$instances_gateway'" \/>/g' $instances_dir_path$name/libvirt.xml
-    echo -e "$instances_mac,$instances_hostname.novalocal,$fixed_ip" >> /var/lib/nova/networks/nova-br100.conf
+    echo -e "\n$instances_mac,$instances_hostname.novalocal,$fixed_ip" >> /var/lib/nova/networks/nova-br100.conf
     float_ip=`cat /root/instance_info_list.txt | grep $name | awk '{print $4}'`
     if [ "$float_ip" != '' ] ;then
         public_interface=`grep public_interface /etc/nova/nova.conf | awk -F= '{print $2}'`
@@ -53,4 +53,6 @@ _Longgeek_
     virsh define $instances_dir_path$name/libvirt.xml
     virsh start $name
 done
+chown nova:nova /var/lib/nova/networks/nova-br100.conf
+/etc/init.d/openstack-nova-network reload
 /etc/init.d/iptables save
