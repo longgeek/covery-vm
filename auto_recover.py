@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os,re
+import os
+import re
 import MySQLdb
 
 #判断计算节点是否宕机,compute_down_list是宕机的计算节点列表
@@ -10,7 +11,7 @@ def select_compute_down_host():
     nova_service_list = os.popen("nova-manage service list 2> /dev/null").read().strip().split("\n")
     compute_down_list = []
     for compute_num in range(len(nova_service_list)):
-        if len(re.findall(r"[(nova-compute),(nova-network)].*?(enabled).*?(XXX)",nova_service_list[compute_num])) == 0:
+        if len(re.findall(r"[(nova-compute),(nova-network)].*?(enabled).*?(XXX)", nova_service_list[compute_num])) == 0:
             continue
         else:
             compute_down_list.append(nova_service_list[compute_num].split()[1])
@@ -79,8 +80,8 @@ def select_compute_down_host_instances(host='172.16.0.21', user='nova', passwd='
         hosts_free_source = cursor.fetchall()[0]
         hosts_resource[host_id] = hosts_free_source
     #总可用vcpu和总ram数
-    total_hosts_vcpus = reduce(lambda x,y: x+y, [r for r,z in hosts_resource.values()])
-    total_hosts_ram = reduce(lambda x,y: x+y, [z for r,z in hosts_resource.values()]) 
+    total_hosts_vcpus = reduce(lambda x, y: x+y, [r for r, z in hosts_resource.values()])
+    total_hosts_ram = reduce(lambda x, y: x+y, [z for r, z in hosts_resource.values()]) 
     instances_resource = {}
     instances_id = {}
     instances_id_id = {}
@@ -101,8 +102,8 @@ def select_compute_down_host_instances(host='172.16.0.21', user='nova', passwd='
             cursor.execute(sql_select_instance_id_id)
             instances_id_id_all = cursor.fetchall()[0]
             instances_id_id[j[0]] = instances_id_id_all
-    total_instances_vcpus = reduce(lambda x,y: x+y, [r for r,z in instances_resource.values()])
-    total_instances_ram = reduce(lambda x,y: x+y, [z for r,z in instances_resource.values()])
+    total_instances_vcpus = reduce(lambda x, y: x+y, [r for r, z in instances_resource.values()])
+    total_instances_ram = reduce(lambda x, y: x+y, [z for r, z in instances_resource.values()])
     
     #判断所有可用计算节点的资源是否能承载需要恢复的所有虚拟机
     if total_instances_vcpus <= total_hosts_vcpus and total_instances_ram <= total_hosts_ram:
@@ -168,10 +169,10 @@ def select_compute_down_host_instances(host='172.16.0.21', user='nova', passwd='
                     sql_delete_service_host = 'delete from services where host=\''+str(i)+'\';'
                     cursor.execute(sql_delete_service_host)
                     cursor.fetchall()
-            	print '###已删除宕机的计算节点###'
+                print '###已删除宕机的计算节点###'
                 break
             else:
-                print 'Big',i > j
+                print 'Big', i > j
 
     cursor.close()
     connection_mysql.commit()
